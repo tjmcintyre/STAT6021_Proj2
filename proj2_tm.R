@@ -1,3 +1,8 @@
+library(tidyverse)
+library(ROCR)
+library(MASS)
+library(dplyr)
+library(caret)
 ####### Project 2 PGA Tour Analysis #######
 data = read.csv('pgaTourData.csv')
 data = as.data.frame(data)
@@ -68,6 +73,7 @@ boxplot(df17$Average.SG.Putts~df17$Win_Binary, main = "Boxplots of Avg Srokes Ga
 boxplot(df17$SG.ARG~df17$Win_Binary, main = "Boxplots of Avg Srokes Gained around the green vs Atleast 1 Wins") # better players gain more strokes chipping
 
 ########################################################################################################################################################
+
 
 
 #First want to build a model purely on the Strokes gained variables
@@ -141,4 +147,53 @@ plot(roc_result)
 lines(x = c(0,1), y = c(0,1), col="red")
 
 
+#create no player/year df #step reg
 
+
+####### New approach Stepwise regression using all numerics
+full.model <- glm(Win_Binary ~ Rounds + Fairway.Percentage + Avg.Distance
+                  + gir + Average.Putts + Average.Scrambling + Average.Score 
+                  + Points + Average.SG.Putts + Average.SG.Total + SG.OTT 
+                  + SG.OTT + SG.APR + SG.ARG + Money, data = df17, family = binomial)
+coef(full.model)
+
+step.model <- full.model %>% stepAIC(trace = FALSE)
+step.model
+
+model = glm(formula = Win_Binary ~ Rounds + Fairway.Percentage + gir + 
+      Average.Putts + Average.Scrambling + Average.Score + Points + 
+      SG.ARG, family = binomial, data = df17)
+
+df18 = df[c(1:190),]
+
+preds<-predict(model,newdata=df18, type="response")
+preds[is.na(preds)] <- 0
+rates<-prediction(preds, df18$Win_Binary)
+roc_result<-performance(rates,measure="tpr", x.measure="fpr")
+plot(roc_result)
+lines(x = c(0,1), y = c(0,1), col="red")
+
+
+#get rid of the boring variables, only on playing variables now
+
+full.model <- glm(Win_Binary ~  Fairway.Percentage + Avg.Distance
+                  + gir + Average.Putts + Average.Scrambling 
+                   + Average.SG.Putts  + SG.OTT 
+                  + SG.OTT + SG.APR + SG.ARG, data = df17, family = binomial)
+coef(full.model)
+
+step.model <- full.model %>% stepAIC(trace = FALSE)
+step.model
+model = glm(formula = Win_Binary ~ Fairway.Percentage + Avg.Distance + 
+              Average.Scrambling + Average.SG.Putts + SG.APR + SG.ARG, 
+            family = binomial, data = df17)
+
+
+df18 = df[c(1:190),]
+
+preds<-predict(model,newdata=df18, type="response")
+preds[is.na(preds)] <- 0
+rates<-prediction(preds, df18$Win_Binary)
+roc_result<-performance(rates,measure="tpr", x.measure="fpr")
+plot(roc_result)
+lines(x = c(0,1), y = c(0,1), col="red")

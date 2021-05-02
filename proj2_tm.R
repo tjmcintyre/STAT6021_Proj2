@@ -35,12 +35,13 @@ table(df18$Win_Binary)
 #since it wouldn't make our model necessarily interesting
 
 ############################################After fitting some models these may be the most important variables to produce something that works########
- 
+par(mfrow=c(3,2))
 boxplot(df17$Average.Score~df17$Win_Binary, main = "Boxplots of Avg Score vs Atleast 1 Wins") #try to avoid this variable cause it'd be boring
 boxplot(df17$Average.SG.Total~df17$Win_Binary, main = "Boxplots of Avg Srokes Gained Total vs Atleast 1 Wins") #try to avoid this variable cause it'd be boring
 boxplot(df17$Money~df17$Win_Binary, main = "Boxplots of Purse vs Atleast 1 Wins")# try to avoid this variable because it'd be boring
-boxplot(df17$Points~df17$Win_Binary, main = "Boxplots of Purse vs Atleast 1 Wins")
-boxplot(df17$Top.10~df17$Win_Binary, main = "Boxplots of Purse vs Atleast 1 Wins")
+boxplot(df17$Points~df17$Win_Binary, main = "Boxplots of Points vs Atleast 1 Wins")
+boxplot(df17$Top.10~df17$Win_Binary, main = "Boxplots of Top Tens vs Atleast 1 Wins")
+boxplot(df17$Rounds~df17$Win_Binary, main = "Boxplots of Rounds vs Atleast 1 Wins")
 ########################################################################################################################################################
 
 #############Rounds may be cool to look at to see if purely playing more raises there chances while in the presence of the other variables #############
@@ -50,7 +51,7 @@ boxplot(df17$Rounds~df17$Win_Binary, main = "Boxplots of Rounds vs Atleast 1 Win
 ########################################################################################################################################################
 
 ###################################3 VaRIABLES THAT ARE CONSIDERED YOUR LONG GAME IN GOLF ##############################################################
-
+par(mfrow=c(1,3))
 boxplot(df17$Fairway.Percentage~df17$Win_Binary, main = "Boxplots of Fairway Percentage vs Atleast 1 Wins") #large spread in comparison
 boxplot(df17$Avg.Distance~df17$Win_Binary, main = "Boxplots of Avg Distance vs Atleast 1 Wins") #avg distance looks interesting
 boxplot(df17$SG.OTT~df17$Win_Binary, main = "Boxplots of Avg Srokes Gained off the tee vs Atleast 1 Wins") # may be a combination of the two above
@@ -59,9 +60,9 @@ boxplot(df17$SG.OTT~df17$Win_Binary, main = "Boxplots of Avg Srokes Gained off t
 
 ################################### VaRIABLES THAT ARE CONSIDERED YOUR mEDIUM GAME IN GOLF #############################################################
 
-boxplot(df17$gir~df17$Win_Binary, main = "Boxplots of Greens in Regulation vs Atleast 1 Wins") #does not look very different
-boxplot(df17$SG.APR~df17$Win_Binary, main = "Boxplots of Avg Srokes Gained Approaching the green vs Atleast 1 Wins") #decent spread
-boxplot(df17$Average.Scrambling~df17$Win_Binary, main = "Boxplots of Avg Scrambling in Regulation vs Atleast 1 Wins") #decent spread between the two, better players less scrambling
+boxplot(df17$gir~df17$Win_Binary, main = "Boxplots of GIR vs Atleast 1 Wins") #does not look very different
+boxplot(df17$SG.APR~df17$Win_Binary, main = "Boxplots of SG.APR vs Atleast 1 Wins") #decent spread
+boxplot(df17$Average.Scrambling~df17$Win_Binary, main = "Boxplots of Scrambling vs Atleast 1 Wins") #decent spread between the two, better players less scrambling
  
 ########################################################################################################################################################
 
@@ -69,109 +70,53 @@ boxplot(df17$Average.Scrambling~df17$Win_Binary, main = "Boxplots of Avg Scrambl
 ################################### VaRIABLES THAT ARE CONSIDERED YOUR SHORT GAME IN GOLF ##############################################################
 
 boxplot(df17$Average.Putts~df17$Win_Binary, main = "Boxplots of Avg Putts vs Atleast 1 Wins") # better players have smaller spread of avg putts
-boxplot(df17$Average.SG.Putts~df17$Win_Binary, main = "Boxplots of Avg Srokes Gained Putts vs Atleast 1 Wins") # better players gain more strokes on putts
-boxplot(df17$SG.ARG~df17$Win_Binary, main = "Boxplots of Avg Srokes Gained around the green vs Atleast 1 Wins") # better players gain more strokes chipping
+boxplot(df17$Average.SG.Putts~df17$Win_Binary, main = "Boxplots of SG.Putts vs Atleast 1 Wins") # better players gain more strokes on putts
+boxplot(df17$SG.ARG~df17$Win_Binary, main = "Boxplots of SG.ARG vs Atleast 1 Wins") # better players gain more strokes chipping
 
 ########################################################################################################################################################
 
-
-
-#First want to build a model purely on the Strokes gained variables
-#SG.OTT is looking at how much better they do off the tee or their long game
-#SG.APR is looking at how much better they do with irons and woods. Usually the second/third shots aka their medium game
-#SG.ARG is looking at how much better they do with their wedges. Chipping around the green, aka their short game
-#SG.Putts is looking at how much better they do putting. 
-# I think this could be interesting model in predicting winners and what is truly the most important facet of a golfers game.
-
-sg.mod = glm(df17$Win_Binary ~ df17$SG.OTT + df17$SG.APR + df17$SG.ARG + df17$Average.Putts, family = "binomial")
-summary(sg.mod)
-
-1-pchisq(sg.mod$null.deviance-sg.mod$deviance,4)
-
-#reject the null and conclude atleast one of the coefficients is significant in making the model useful
-
-#lets remove SG.APR and SG.AGR, aka the middle game and short game
-sg.mod.red = glm(df17$Win_Binary ~ df17$SG.OTT + df17$Average.Putts, family = "binomial")
-summary(sg.mod.red)
-
-1-pchisq(sg.mod.red$deviance-sg.mod$deviance,2)
-#fail to reject the null hypothesis and go with the reduced model
-
-df18 = df[c(1:190),] #removed 3 rows to make ROC work, need same number of rows
-
-preds<-predict(sg.mod.red,newdata=df18, type="response")
-rates<-prediction(preds, df18$Win_Binary)
-roc_result<-performance(rates,measure="tpr", x.measure="fpr")
-plot(roc_result)
-lines(x = c(0,1), y = c(0,1), col="red")
-
-#ROC curve is barely better then random guessing, thus lets just add the SG,Total variable in instead of it broken down
-
-sg.tot =  glm(df17$Win_Binary ~ df17$Average.SG.Total, family = "binomial")
-summary(sg.tot)
-
-preds<-predict(sg.tot,newdata=df18, type="response")
-rates<-prediction(preds, df18$Win_Binary)
-roc_result<-performance(rates,measure="tpr", x.measure="fpr")
-plot(roc_result)
-lines(x = c(0,1), y = c(0,1), col="red")
-
-#having SG.Total produces a worse ROC plot so we will return to sg.mod.red
-#lets add all other variables into the sg.mod.red model besides the one label rounds, money, score and ,sg total
-mod.full = glm(df17$Win_Binary ~ df17$SG.OTT + df17$Average.Putts + df17$Avg.Distance + df17$Fairway.Percentage + df17$gir + df17$Average.Scrambling
-               +df17$gir + df17$Average.Scrambling , family = "binomial")
-summary(mod.full)
-
-preds<-predict(mod.full,newdata=df18, type="response")
-rates<-prediction(preds, df18$Win_Binary)
-roc_result<-performance(rates,measure="tpr", x.measure="fpr")
-plot(roc_result)
-lines(x = c(0,1), y = c(0,1), col="red")
-
-#poor fit as well as predicted from the summary output
-
-### boring variable model
-mod.boring =  glm(df17$Win_Binary ~ df17$Rounds +df17$Points + df17$Money +df17$Average.SG.Total + df17$Top.10 , family = "binomial")
-summary(mod.boring)
-
-mod.boring.red = glm(df17$Win_Binary ~ df17$Points  +df17$Average.SG.Total +df17$Top.10 , family = "binomial")
-summary(mod.boring.red)
-
-1-pchisq(mod.boring.red$deviance-mod.boring$deviance,2)
-#fail to reject null and go with smaller model
-
-preds<-predict(mod.boring.red,newdata=df18, type="response")
-rates<-prediction(preds, df18$Win_Binary)
-roc_result<-performance(rates,measure="tpr", x.measure="fpr")
-plot(roc_result)
-lines(x = c(0,1), y = c(0,1), col="red")
-
-
-#create no player/year df #step reg
-
-
 ####### New approach Stepwise regression using all numerics
+
 full.model <- glm(Win_Binary ~ Rounds + Fairway.Percentage + Avg.Distance
-                  + gir + Average.Putts + Average.Scrambling + Average.Score 
+                  + gir + Average.Putts + Average.Scrambling  
                   + Points + Average.SG.Putts + Average.SG.Total + SG.OTT 
                   + SG.OTT + SG.APR + SG.ARG + Money, data = df17, family = binomial)
+
+
 coef(full.model)
 
 step.model <- full.model %>% stepAIC(trace = FALSE)
 step.model
 
-model = glm(formula = Win_Binary ~ Rounds + Fairway.Percentage + gir + 
-      Average.Putts + Average.Scrambling + Average.Score + Points + 
-      SG.ARG, family = binomial, data = df17)
+summary(step.model)
+1-pchisq(step.model$null.deviance-step.model$deviance,5)
 
 df18 = df[c(1:190),]
-
-preds<-predict(model,newdata=df18, type="response")
+par(mfrow=c(1,1))
+preds<-predict(step.model,newdata=df18, type="response")
 preds[is.na(preds)] <- 0
 rates<-prediction(preds, df18$Win_Binary)
 roc_result<-performance(rates,measure="tpr", x.measure="fpr")
-plot(roc_result)
+plot(roc_result, main = "ROC Plot")
 lines(x = c(0,1), y = c(0,1), col="red")
+
+auc=performance(rates, measure = "auc")
+auc@y.values
+
+thresh = .15
+table(df18$Win_Binary, preds>thresh)
+
+TN= table(df18$Win_Binary, preds>thresh)[1]
+FN= table(df18$Win_Binary, preds>thresh)[2]
+FP= table(df18$Win_Binary, preds>thresh)[3]
+TP= table(df18$Win_Binary, preds>thresh)[4]
+FPR = FP / (TN + FP)
+FNR = FN / (FN + TP)
+
+#False positive rate
+FPR
+#False negative rate
+FNR
 
 
 #get rid of the boring variables, only on playing variables now
@@ -180,20 +125,40 @@ full.model <- glm(Win_Binary ~  Fairway.Percentage + Avg.Distance
                   + gir + Average.Putts + Average.Scrambling 
                    + Average.SG.Putts  + SG.OTT 
                   + SG.OTT + SG.APR + SG.ARG, data = df17, family = binomial)
+
 coef(full.model)
 
 step.model <- full.model %>% stepAIC(trace = FALSE)
 step.model
-model = glm(formula = Win_Binary ~ Fairway.Percentage + Avg.Distance + 
-              Average.Scrambling + Average.SG.Putts + SG.APR + SG.ARG, 
-            family = binomial, data = df17)
+
+summary(step.model)
+1-pchisq(step.model$null.deviance-step.model$deviance,6)
+
 
 
 df18 = df[c(1:190),]
 
-preds<-predict(model,newdata=df18, type="response")
+preds<-predict(step.model,newdata=df18, type="response")
 preds[is.na(preds)] <- 0
 rates<-prediction(preds, df18$Win_Binary)
 roc_result<-performance(rates,measure="tpr", x.measure="fpr")
-plot(roc_result)
+plot(roc_result, main="ROC Plot")
 lines(x = c(0,1), y = c(0,1), col="red")
+
+auc=performance(rates, measure = "auc")
+auc@y.values
+
+thresh = .4
+table(df18$Win_Binary, preds>thresh)
+
+TN= table(df18$Win_Binary, preds>thresh)[1]
+FN= table(df18$Win_Binary, preds>thresh)[2]
+FP= table(df18$Win_Binary, preds>thresh)[3]
+TP= table(df18$Win_Binary, preds>thresh)[4]
+FPR = FP / (TN + FP)
+FNR = FN / (FN + TP)
+
+#False positive rate
+FPR
+#False negative rate
+FNR

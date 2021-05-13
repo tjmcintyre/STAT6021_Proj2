@@ -80,7 +80,7 @@ boxplot(df17$SG.ARG~df17$Win_Binary, main = "Boxplots of SG.ARG vs Atleast 1 Win
 full.model <- glm(Win_Binary ~ Rounds + Fairway.Percentage + Avg.Distance
                   + gir + Average.Putts + Average.Scrambling  
                   + Points + Average.SG.Putts + Average.SG.Total + SG.OTT 
-                  + SG.OTT + SG.APR + SG.ARG + Money, data = df17, family = binomial)
+                   + SG.APR + SG.ARG + Money, data = df17, family = binomial)
 
 
 coef(full.model)
@@ -124,7 +124,7 @@ FNR
 full.model <- glm(Win_Binary ~  Fairway.Percentage + Avg.Distance
                   + gir + Average.Putts + Average.Scrambling 
                    + Average.SG.Putts  + SG.OTT 
-                  + SG.OTT + SG.APR + SG.ARG, data = df17, family = binomial)
+                   + SG.APR + SG.ARG, data = df17, family = binomial)
 
 coef(full.model)
 
